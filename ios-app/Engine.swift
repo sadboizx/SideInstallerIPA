@@ -241,10 +241,17 @@ final class Engine: ObservableObject {
     /// The same number as text, for UI copy.
     static var minimumOSText: String { "\(minimumOSMajorVersion)" }
 
-    /// Minimum iOS for everything after pairing. The RSD tunnel needs iOS 17+
-    /// (CoreDeviceProxy); the UI needs 18.
-    static let minimumTunnelOSMajorVersion = 18
-    static var minimumTunnelOSText: String { "\(minimumTunnelOSMajorVersion)" }
+    /// Minimum iOS for everything after pairing. Upstream set this to 18
+    /// ("the UI needs 18"), which contradicted its own README (17.4+ with an
+    /// imported pairing file) and its 17.4 deployment target: the one
+    /// iOS 18-only UI piece, `MeshGradient`, already has an iOS 17 fallback
+    /// in Theme.swift, and everything else on the install path uses
+    /// iOS 17 APIs. This fork lowers the floor to 17.4 exactly — the
+    /// deployment target in project.yml and the Rust core's floor — so
+    /// iOS 17.0–17.3 stays unsupported, as the README's table says.
+    static let minimumTunnelOSVersion =
+        OperatingSystemVersion(majorVersion: 17, minorVersion: 4, patchVersion: 0)
+    static var minimumTunnelOSText: String { "17.4" }
 
     /// True when this iPhone can pair with itself, so no computer-made pairing
     /// file is needed. Static so non-isolated code can read it.
@@ -280,8 +287,7 @@ final class Engine: ObservableObject {
     /// pairing file.
     var osSupported: Bool {
         ProcessInfo.processInfo.isOperatingSystemAtLeast(
-            OperatingSystemVersion(majorVersion: Engine.minimumTunnelOSMajorVersion,
-                                   minorVersion: 0, patchVersion: 0))
+            Engine.minimumTunnelOSVersion)
     }
 
     /// True when there's a pairing file on disk to connect with.
